@@ -243,6 +243,7 @@ class pjlinkv2 extends utils.Adapter {
                 this.log.info(`Communication with ${iporhost} established, using PJLink Class${protocol} protocol.`);
             }
 
+            // Class#1 attributes
             pjlink(iporhost, port, password, "%1NAME ?", (result) => {
                 this.setStateAsync('info.name', {val: result, ack: true});
                 this.log.debug('Initial fetching info.name = ' + result);
@@ -278,6 +279,15 @@ class pjlinkv2 extends utils.Adapter {
                                     this.setStateAsync('info.lampOn#2', {val: getLamps[3] ? true : false, ack: true});
                                     this.log.debug('set lampOn for Lamp#2 ' + (getLamps[3] ? true : false));
                                 }
+                                
+                               // Class#2 attributes
+                                if protocol == 2 {              
+                                pjlink(iporhost, port, password, "%2SNUM ?", (result) => {
+                                        this.setStateAsync('info.deviceSerialNumber', {val: result, ack: true});
+                                        this.log.debug('Initial fetching info.deviceSerialNumber = ' + result); 
+                                    }
+                                }   
+                               
                             });
                            });
                         });
