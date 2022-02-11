@@ -288,90 +288,92 @@ class pjlinkv2 extends utils.Adapter {
 // End of fetching initials information
 
 // Start fetching current states
-        setInterval(() => {
-            // get power state and check connectivity
-            pjlink(iporhost, port, password, "%1POWR ?", (result) => {
-                this.log.debug('By interval: check connectivity and power state = ' + result);
+        if (polltime > 0) {
+            setInterval(() => {
+                // get power state and check connectivity
+                pjlink(iporhost, port, password, "%1POWR ?", (result) => {
+                    this.log.debug('By interval: check connectivity and power state = ' + result);
 
-                if (result == 'Error: Device not responding'){
-                    this.setStateAsync('info.connection', {val: false, ack: true});
-                    return;
-                } else {
-                    this.setStateAsync('info.connection', {val: true, ack: true});
-                }
-                if (result == 'ERR3') {this.log.error('Power toggle result in Unavailable time (ERR3)'); }
-                if (result == 'ERR4') {this.log.error('Power toggle result in Projector/Display failure (ERR4)'); }
-
-                // device on or off
-                result = parseInt(result,10);
-                this.setStateAsync('info.isPower', {val: result, ack: true});
-                
-                if (result === 1) {powerState = 'on';
-                          this.setStateAsync('on', {val: true, ack: true});
-                    }
-                if (result === 0) {powerState = 'off';
-                          this.setStateAsync('on', {val: false, ack: true}); 
-                          // schöner machen!!!
-                          this.setStateAsync('info.isInput', {val: 0, ack: true});
-                          this.setStateAsync('info.isInputName', {val: 'none', ack: true});
-                          this.setStateAsync('inputSource', {val: 0, ack: false});
+                    if (result == 'Error: Device not responding'){
+                        this.setStateAsync('info.connection', {val: false, ack: true});
                         return;
-                    } 
-                this.log.debug('By interval: PowerState = ' + powerState)
-                
-                // get error Status
-                pjlink(iporhost, port, password, "%1ERST ?", (result) => {
-                    this.setStateAsync('info.error', {val: result, ack: true});
-                    this.log.debug('By interval: fetching info.error = '+result);
-                    this.setStateAsync('info.errorText', {val: translateErrorState(result), ack: true});
+                    } else {
+                        this.setStateAsync('info.connection', {val: true, ack: true});
+                    }
+                    if (result == 'ERR3') {this.log.error('Power toggle result in Unavailable time (ERR3)'); }
+                    if (result == 'ERR4') {this.log.error('Power toggle result in Projector/Display failure (ERR4)'); }
 
-                    // get input state
-                    pjlink(iporhost, port, password, "%1INPT ?", (result) => {
-                        this.log.debug('By interval: fetching info.isInput = ' + result);
-                        // this is not perfect - but it works!!!
-                        this.setStateAsync('info.isInput', {val: parseInt(result,10), ack: true});
-                        this.setStateAsync('info.isInputName', {val: translateInputName(result), ack: true});
-                        this.setStateAsync('inputSource', {val: parseInt(result,10), ack: false});
-                
-                        // get Audio / Video mute state
-                        pjlink(iporhost, port, password, "%1AVMT ?", (result) => {
-                            this.log.debug('By interval: check AVMT = ' + result);
-                            switch (result) {
-                                case '31':
+                    // device on or off
+                    result = parseInt(result,10);
+                    this.setStateAsync('info.isPower', {val: result, ack: true});
+                    
+                    if (result === 1) {powerState = 'on';
+                            this.setStateAsync('on', {val: true, ack: true});
+                        }
+                    if (result === 0) {powerState = 'off';
+                            this.setStateAsync('on', {val: false, ack: true}); 
+                            // schöner machen!!!
+                            this.setStateAsync('info.isInput', {val: 0, ack: true});
+                            this.setStateAsync('info.isInputName', {val: 'none', ack: true});
+                            this.setStateAsync('inputSource', {val: 0, ack: false});
+                            return;
+                        } 
+                    this.log.debug('By interval: PowerState = ' + powerState)
+                    
+                    // get error Status
+                    pjlink(iporhost, port, password, "%1ERST ?", (result) => {
+                        this.setStateAsync('info.error', {val: result, ack: true});
+                        this.log.debug('By interval: fetching info.error = '+result);
+                        this.setStateAsync('info.errorText', {val: translateErrorState(result), ack: true});
+
+                        // get input state
+                        pjlink(iporhost, port, password, "%1INPT ?", (result) => {
+                            this.log.debug('By interval: fetching info.isInput = ' + result);
+                            // this is not perfect - but it works!!!
+                            this.setStateAsync('info.isInput', {val: parseInt(result,10), ack: true});
+                            this.setStateAsync('info.isInputName', {val: translateInputName(result), ack: true});
+                            this.setStateAsync('inputSource', {val: parseInt(result,10), ack: false});
+                    
+                            // get Audio / Video mute state
+                            pjlink(iporhost, port, password, "%1AVMT ?", (result) => {
+                                this.log.debug('By interval: check AVMT = ' + result);
+                                switch (result) {
+                                    case '31':
+                                        this.setStateAsync('info.videoMute', {val: true, ack: true});
+                                        this.setStateAsync('info.audioMute', {val: true, ack: true});
+                                        av_mute = 31;
+                                        break;
+                                    case '30':
+                                        this.setStateAsync('info.videoMute', {val: false, ack: true});
+                                        this.setStateAsync('info.audioMute', {val: false, ack: true});
+                                        av_mute = 30;
+                                        break;
+                                    case '21':
+                                        this.setStateAsync('info.videoMute', {val: false, ack: true});
+                                        this.setStateAsync('info.audioMute', {val: true, ack: true});
+                                        av_mute = 21;
+                                        break;
+                                    case '20':
+                                        this.setStateAsync('info.videoMute', {val: false, ack: true});
+                                        this.setStateAsync('info.audioMute', {val: false, ack: true});
+                                        av_mute = 20;
+                                        break;
+                                    case '11':
                                     this.setStateAsync('info.videoMute', {val: true, ack: true});
-                                    this.setStateAsync('info.audioMute', {val: true, ack: true});
-                                    av_mute = 31;
-                                    break;
-                                case '30':
-                                    this.setStateAsync('info.videoMute', {val: false, ack: true});
                                     this.setStateAsync('info.audioMute', {val: false, ack: true});
-                                    av_mute = 30;
-                                    break;
-                                case '21':
-                                    this.setStateAsync('info.videoMute', {val: false, ack: true});
-                                    this.setStateAsync('info.audioMute', {val: true, ack: true});
-                                    av_mute = 21;
-                                    break;
-                                case '20':
-                                    this.setStateAsync('info.videoMute', {val: false, ack: true});
-                                    this.setStateAsync('info.audioMute', {val: false, ack: true});
-                                    av_mute = 20;
-                                    break;
-                                case '11':
-                                   this.setStateAsync('info.videoMute', {val: true, ack: true});
-                                   this.setStateAsync('info.audioMute', {val: false, ack: true});
-                                   av_mute = 11;
-                                    break;
-                                case '10':
-                                    this.setStateAsync('info.videoMute', {val: false, ack: true});
-                                    this.setStateAsync('info.audioMute', {val: false, ack: true});
-                                   av_mute = 10;
-                            }
+                                    av_mute = 11;
+                                        break;
+                                    case '10':
+                                        this.setStateAsync('info.videoMute', {val: false, ack: true});
+                                        this.setStateAsync('info.audioMute', {val: false, ack: true});
+                                    av_mute = 10;
+                                }
+                            });
                         });
                     });
                 });
-            });
-        }, polltime);
+            }, polltime);
+        }
     }
 
 
